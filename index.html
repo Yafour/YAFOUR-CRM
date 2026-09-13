@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>YAFOUR SYSTEM - ERP & LOGISTICS</title>
-    <!-- خط Cairo وأيقونات FontAwesome -->
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -28,7 +27,6 @@
             width: 100vw;
         }
 
-        /* Sidebar Styling */
         .sidebar {
             width: 260px;
             background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
@@ -106,7 +104,6 @@
             text-align: center;
         }
 
-        /* Main Dynamic Content Area */
         .main-content {
             flex: 1;
             padding: 25px;
@@ -115,7 +112,6 @@
             position: relative;
         }
 
-        /* Loader Animation */
         .loader-container {
             display: none;
             flex-direction: column;
@@ -144,7 +140,6 @@
 <body>
 
     <div class="app-container">
-        <!-- الشريط الجانبي للتنقل -->
         <div class="sidebar">
             <div class="brand-header">
                 <h2>YAFOUR SYSTEM</h2>
@@ -202,7 +197,6 @@
             </div>
         </div>
 
-        <!-- المنطقة الديناميكية لعرض المحتوى -->
         <div class="main-content" id="app-viewport">
             <div id="loader" class="loader-container">
                 <div class="spinner"></div>
@@ -213,17 +207,15 @@
     </div>
 
     <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzAGm16wdgKpQd4EL1hR56G48gaCXD2pL8Dcqn19LAdGeVT1ymSNRAd02N-RrHGSDLp/exec";
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbybXq1OUgjmB1VuauY5Off8Rv88yRF93cDDl_VyvSMxFvKEq_3j5qfI_LunjrRa3MOP/exec";
 
-        // التحميل الأولي عند فتح الصفحة
         window.addEventListener('DOMContentLoaded', () => {
             const initialNavItem = document.querySelector('.nav-item.active');
             loadPage(initialNavItem, 'Dashboard');
         });
 
         function loadPage(element, pageName) {
-            // تحديث الزر النشط في القائمة الجانبية
-            if(element) {
+            if (element) {
                 document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
                 element.classList.add('active');
             }
@@ -231,37 +223,45 @@
             const loader = document.getElementById('loader');
             const renderTarget = document.getElementById('page-render-target');
 
-            // إظهار اللودر وتنظيف المساحة
             loader.style.display = 'flex';
             renderTarget.innerHTML = '';
 
-            // جلب محتوى الصفحة مباشرة بدون فريم
-            fetch(`${SCRIPT_URL}?page=${encodeURIComponent(pageName)}`)
-                .then(response => response.text())
-                .then(htmlContent => {
-                    loader.style.display = 'none';
-                    renderTarget.innerHTML = htmlContent;
+            const callbackName = 'jsonp_cb_' + Math.round(100000 * Math.random());
+            
+            window[callbackName] = function(data) {
+                loader.style.display = 'none';
+                renderTarget.innerHTML = data.html;
 
-                    // تنفيذ أي أكواد JavaScript موجودة داخل الصفحة المسترجعة
-                    const scripts = renderTarget.querySelectorAll('script');
-                    scripts.forEach(script => {
-                        const newScript = document.createElement('script');
-                        if (script.src) {
-                            newScript.src = script.src;
-                        } else {
-                            newScript.textContent = script.textContent;
-                        }
-                        document.body.appendChild(newScript);
-                    });
-                })
-                .catch(error => {
-                    loader.style.display = 'none';
-                    renderTarget.innerHTML = `<div style="color: #ef4444; padding: 20px; text-align: center;">
-                        <i class="fa-solid fa-triangle-exclamation fa-2x"></i>
-                        <p style="margin-top: 10px;">حدث خطأ أثناء تحميل الصفحة. يرجى التأكد من صلاحيات النشر (Anyone) وإعادة المحاولة.</p>
-                    </div>`;
-                    console.error('Error fetching page:', error);
+                // إعادة تشغيل السكريبتات المضمنة داخل HTML الصفحة المستدعاة
+                const scripts = renderTarget.querySelectorAll('script');
+                scripts.forEach(script => {
+                    const newScript = document.createElement('script');
+                    if (script.src) {
+                        newScript.src = script.src;
+                    } else {
+                        newScript.textContent = script.textContent;
+                    }
+                    document.body.appendChild(newScript);
                 });
+
+                // تنظيف بعد انتهاء الاستدعاء
+                delete window[callbackName];
+                const oldScript = document.getElementById(callbackName);
+                if (oldScript) oldScript.remove();
+            };
+
+            const script = document.createElement('script');
+            script.id = callbackName;
+            script.src = `${SCRIPT_URL}?page=${encodeURIComponent(pageName)}&callback=${callbackName}`;
+            script.onerror = function() {
+                loader.style.display = 'none';
+                renderTarget.innerHTML = `<div style="color: #ef4444; padding: 20px; text-align: center;">
+                    <i class="fa-solid fa-triangle-exclamation fa-2x"></i>
+                    <p style="margin-top: 10px;">عذراً، متعذر الاتصال بالسكربت. تأكد من عمل Deploy جديد بصلاحية Anyone.</p>
+                </div>`;
+            };
+            
+            document.body.appendChild(script);
         }
     </script>
 </body>
