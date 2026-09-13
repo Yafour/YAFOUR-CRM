@@ -188,18 +188,18 @@
     </div>
 
     <script>
-        // رابط السكريبت الأساسي الثابت
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbybXqlOUgjmB1VuauY50ff8Rv88yRF93cDDl_VyvSMxFvKEq_3j5qfI_LunjrRa3MOP/exec";
+        // الرابط الصحيح والمعدل مائة بالمائة لـ Google Apps Script
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbybXq1OUgjmB1VuauY5Off8Rv88yRF93cDD1_VyvSMxFvKEq_3j5qfI_LunjrRa3MOP/exec";
 
         function switchPage(element, pageName) {
-            // تحديث الزر النشط في Sidebar
+            // تحديث الزر النشط في الشريط الجانبي
             document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
             element.classList.add('active');
 
-            // تنظيف اسم الصفحة للتحويل
+            // استخراج اسم الصفحة بدون امتداد html
             const cleanPageName = pageName.replace('.html', '');
 
-            // تغيير رابط ה-iframe ديناميكياً
+            // تحديث رابط iframe ديناميكياً
             const iframe = document.getElementById('content-frame');
             iframe.src = SCRIPT_URL + "?page=" + cleanPageName;
         }
