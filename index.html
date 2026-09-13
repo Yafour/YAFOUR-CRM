@@ -18,13 +18,13 @@
 
         body, html {
             height: 100%;
-            overflow: hidden;
             background-color: #f8fafc;
+            overflow-x: hidden;
         }
 
         .app-container {
             display: flex;
-            height: 100vh;
+            min-height: 100vh;
             width: 100vw;
         }
 
@@ -37,6 +37,7 @@
             flex-direction: column;
             box-shadow: 4px 0 15px rgba(0,0,0,0.1);
             z-index: 10;
+            flex-shrink: 0;
         }
 
         .brand-header {
@@ -105,18 +106,38 @@
             text-align: center;
         }
 
-        /* Main Content Container */
+        /* Main Dynamic Content Area */
         .main-content {
             flex: 1;
-            height: 100%;
+            padding: 25px;
             background-color: #f1f5f9;
+            overflow-y: auto;
             position: relative;
         }
 
-        iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
+        /* Loader Animation */
+        .loader-container {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 300px;
+            color: #0284c7;
+        }
+
+        .spinner {
+            border: 4px solid #e2e8f0;
+            border-top: 4px solid #0284c7;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 12px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
@@ -132,76 +153,115 @@
 
             <div class="nav-menu">
                 <div class="nav-group-title">الرئيسية والإدارة</div>
-                <div class="nav-item active" onclick="switchPage(this, 'Dashboard.html')">
+                <div class="nav-item active" onclick="loadPage(this, 'Dashboard')">
                     <i class="fa-solid fa-chart-pie"></i>
                     <span>لوحة التحكم (Dashboard)</span>
                 </div>
-                <div class="nav-item" onclick="switchPage(this, 'Orders.html')">
+                <div class="nav-item" onclick="loadPage(this, 'Orders')">
                     <i class="fa-solid fa-cart-shopping"></i>
                     <span>طلبات التصدير (Orders)</span>
                 </div>
 
                 <div class="nav-group-title">الإنتاج والتصنيع</div>
-                <div class="nav-item" onclick="switchPage(this, 'Production.html')">
+                <div class="nav-item" onclick="loadPage(this, 'Production')">
                     <i class="fa-solid fa-industry"></i>
                     <span>خطة الإنتاج (Production)</span>
                 </div>
-                <div class="nav-item" onclick="switchPage(this, 'BOM.html')">
+                <div class="nav-item" onclick="loadPage(this, 'BOM')">
                     <i class="fa-solid fa-sitemap"></i>
                     <span>شجرة المنتجات (BOM)</span>
                 </div>
-                <div class="nav-item" onclick="switchPage(this, 'ItemEntry.html')">
+                <div class="nav-item" onclick="loadPage(this, 'ItemEntry')">
                     <i class="fa-solid fa-box-archive"></i>
                     <span>تكويد الأصناف (Item Entry)</span>
                 </div>
 
                 <div class="nav-group-title">اللوجستيات والشحن</div>
-                <div class="nav-item" onclick="switchPage(this, 'ContainerCalc.html')">
+                <div class="nav-item" onclick="loadPage(this, 'ContainerCalc')">
                     <i class="fa-solid fa-truck-ramp-box"></i>
                     <span>حاسبة الحاويات (Container)</span>
                 </div>
-                <div class="nav-item" onclick="switchPage(this, 'Logistics.html')">
+                <div class="nav-item" onclick="loadPage(this, 'Logistics')">
                     <i class="fa-solid fa-ship"></i>
                     <span>إدارة الشحن (Logistics)</span>
                 </div>
-                <div class="nav-item" onclick="switchPage(this, 'LogisticsBooking.html')">
+                <div class="nav-item" onclick="loadPage(this, 'LogisticsBooking')">
                     <i class="fa-solid fa-file-contract"></i>
                     <span>حجز الشحنات (Booking)</span>
                 </div>
 
                 <div class="nav-group-title">المشتريات والملصقات</div>
-                <div class="nav-item" onclick="switchPage(this, 'Procurement.html')">
+                <div class="nav-item" onclick="loadPage(this, 'Procurement')">
                     <i class="fa-solid fa-handshake"></i>
                     <span>المشتريات (Procurement)</span>
                 </div>
-                <div class="nav-item" onclick="switchPage(this, 'Sticker.html')">
+                <div class="nav-item" onclick="loadPage(this, 'Sticker')">
                     <i class="fa-solid fa-barcode"></i>
                     <span>طباعة الاستيكرات (Stickers)</span>
                 </div>
             </div>
         </div>
 
-        <!-- شاشة عرض الصفحات المختارة -->
-        <div class="main-content">
-            <iframe id="content-frame" src="https://script.google.com/macros/s/AKfycbw8-59SGM6VzqLE4gdI7YytHeDwf_PUFPhkQnfEEayYXBOzvIJKc1AvFTbGScL1zLTb/exec"></iframe>
+        <!-- المنطقة الديناميكية لعرض المحتوى -->
+        <div class="main-content" id="app-viewport">
+            <div id="loader" class="loader-container">
+                <div class="spinner"></div>
+                <p>جاري تحميل البيانات...</p>
+            </div>
+            <div id="page-render-target"></div>
         </div>
     </div>
 
     <script>
-        // الرابط الصحيح والمعدل مائة بالمائة لـ Google Apps Script
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw8-59SGM6VzqLE4gdI7YytHeDwf_PUFPhkQnfEEayYXBOzvIJKc1AvFTbGScL1zLTb/exec";
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbybXq1OUgjmB1VuauY5Off8Rv88yRF93cDDl_VyvSMxFvKEq_3j5qfI_LunjrRa3MOP/exec";
 
-        function switchPage(element, pageName) {
-            // تحديث الزر النشط في الشريط الجانبي
-            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-            element.classList.add('active');
+        // التحميل الأولي عند فتح الصفحة
+        window.addEventListener('DOMContentLoaded', () => {
+            const initialNavItem = document.querySelector('.nav-item.active');
+            loadPage(initialNavItem, 'Dashboard');
+        });
 
-            // استخراج اسم الصفحة بدون امتداد html
-            const cleanPageName = pageName.replace('.html', '');
+        function loadPage(element, pageName) {
+            // تحديث الزر النشط في القائمة الجانبية
+            if(element) {
+                document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+                element.classList.add('active');
+            }
 
-            // تحديث رابط iframe ديناميكياً
-            const iframe = document.getElementById('content-frame');
-            iframe.src = SCRIPT_URL + "?page=" + cleanPageName;
+            const loader = document.getElementById('loader');
+            const renderTarget = document.getElementById('page-render-target');
+
+            // إظهار اللودر وتنظيف المساحة
+            loader.style.display = 'flex';
+            renderTarget.innerHTML = '';
+
+            // جلب محتوى الصفحة مباشرة بدون فريم
+            fetch(`${SCRIPT_URL}?page=${encodeURIComponent(pageName)}`)
+                .then(response => response.text())
+                .then(htmlContent => {
+                    loader.style.display = 'none';
+                    renderTarget.innerHTML = htmlContent;
+
+                    // تنفيذ أي أكواد JavaScript موجودة داخل الصفحة المسترجعة
+                    const scripts = renderTarget.querySelectorAll('script');
+                    scripts.forEach(script => {
+                        const newScript = document.createElement('script');
+                        if (script.src) {
+                            newScript.src = script.src;
+                        } else {
+                            newScript.textContent = script.textContent;
+                        }
+                        document.body.appendChild(newScript);
+                    });
+                })
+                .catch(error => {
+                    loader.style.display = 'none';
+                    renderTarget.innerHTML = `<div style="color: #ef4444; padding: 20px; text-align: center;">
+                        <i class="fa-solid fa-triangle-exclamation fa-2x"></i>
+                        <p style="margin-top: 10px;">حدث خطأ أثناء تحميل الصفحة. يرجى التأكد من صلاحيات النشر (Anyone) وإعادة المحاولة.</p>
+                    </div>`;
+                    console.error('Error fetching page:', error);
+                });
         }
     </script>
 </body>
